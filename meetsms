@@ -4,7 +4,10 @@ set -e
 options=`getopt -o u:r:m:h --long username:,receiver:,message:help -n 'meet' -- "$@"`
 eval set -- "$options"
 #remove old cookies
-rm /tmp/cookies
+if [ -f /tmp/cookies ]
+then
+	rm -f /tmp/cookies
+fi
 function usage {
 echo "Usage:"
 echo "./meet -u username -r receiver's_number -m \"message\""
