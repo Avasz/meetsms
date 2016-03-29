@@ -1,60 +1,73 @@
 #!/bin/bash
 
 set -e
-options=`getopt -o u:r:m:h --long username:,receiver:,message:help -n 'meet' -- "$@"`
-eval set -- "$options"
-#remove old cookies
-if [ -f /tmp/cookies ]
+username="NULL"
+receiver="NULL"
+message="NULL"
+
+#remove old meetcookies
+if [ -f /tmp/meetcookies ]
 then
-	rm -f /tmp/cookies
+	rm -f /tmp/meet*
 fi
+
+
+#help section
 function usage {
-echo "Usage:"
-echo "./meet -u username -r receiver's_number -m \"message\""
-exit
+	echo -e "Usage:
+	 ./meetsms -u username -r receiver's_number -m \"message\""
+
 }
 
-while true
+function send {
+	curl -c /tmp/meetcookies -s --request POST 'http://www.meet.net.np/meet/action/login' -d "username=$username" -d "password=$password" -d "loginPage=true" -d "loginbut=login" 
+	curl -b /tmp/meetcookies -s --request POST 'http://www.meet.net.np/meet/mod/sms/actions/send.php' -d "recipient=$receiver" -d "message=$message" -d "sendbutton=Send Now"  > /tmp/meetlog
+	curl -b /tmp/meetcookies -s --request GET 'http://www.meet.net.np/meet/sms/sms' > /tmp/meetnumber
+}
+
+while getopts ":u:r:m:h" OPT
 do
-	case "$1" in
-		-u|--username)
-			user_name=$2
-			shift 2;;
-		-r|--receiver)
-			receiver=$2
-			shift 2;;
-		-m|--message)
-			message=$2
-			shift 2;;
-	   	-h|--help)
-			usage;;
-	        --)
-			shift
-			break;;
-		*)
-			echo "Invalid. Displaying the help section."
-		        usage
-			break;;
+	case $OPT in
+	u)
+		username=$OPTARG;;
+	r)
+		receiver=$OPTARG;;
+	m)
+		message=$OPTARG;;
+	h)
+		usage;
+		exit;;
+	\?)
+		echo "Invalid Option. -$OPTARG" >&2; 
+		usage
+		exit;;
+	:) 
+		echo "MIssing option arguements for -$OPTARG" >&2;
+		exit;;
+	*) 
+		echo "Unimplemented option: -$OPTARG" >&2;
+		exit;;
 	esac
-done	
-			
-			
-echo -n "Password for $user_name: "
+done
+shift $((OPTIND-1)) 
+
+#Check if all parameters are fulfilled
+if [ "$username" == "NULL" ] || [ "$receiver" == "NULL" ] || [ "$message" == "NULL" ]
+then
+	echo "All three of -u, -r & -m are required. Check syntax:"
+	usage
+	exit
+fi
+
+echo -n "Password for $username: "
 read -s password
 echo
 echo "Sending...."
-curl -c /tmp/cookies -s --request POST 'http://www.meet.net.np/meet/action/login' -d "username=$user_name" -d "password=$password" -d "loginPage=true" -d "loginbut=login" 
-curl -b /tmp/cookies -s --request POST 'http://www.meet.net.np/meet/mod/sms/actions/send.php' -d "recipient=$receiver" -d "message=$message" -d "sendbutton=Send Now"  > /tmp/smslog
-curl -b /tmp/cookies -s --request GET 'http://www.meet.net.np/meet/sms/sms' > /tmp/smsnumber
+send
 
-sent=`cat /tmp/smsnumber | grep Quota | awk '{print $4}' | grep -o -P '(?<=:).*(?=/)'`
-
-
-
-grep -q -o SUCCESS /tmp/smslog && echo "SMS successfully sent. :)" || echo "SMS sending failed. :("
-echo "Number of sms sent today: $sent"
-echo "Number of sms left: $((10-$sent))"
-
+grep -q -o SUCCESS /tmp/meetlog && { echo "SMS successfully sent. :)"; rm -rf /tmp/meet*; } || { echo -e "SMS sending failed. :( \nPossible reasons: \n\t1) Incorrect password, \n\t2) Free SMS Limit Reached, \n\t3) Network Problem, \n\t4) Incorrect Receiver's Mobile Number."; rm -rf /tmp/meet*; exit; }
+sent=`cat /tmp/meetnumber | grep Quota | awk '{print $4}' | grep -o -P '(?<=:).*(?=/)'`
+echo -e "Number of sms sent today: $sent \nNumer of sms left: $((10-$sent))"
 
 
 
