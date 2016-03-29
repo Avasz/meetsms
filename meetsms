@@ -1,0 +1,59 @@
+#!/bin/bash
+
+set -e
+options=`getopt -o u:r:m:h --long username:,receiver:,message:help -n 'meet' -- "$@"`
+eval set -- "$options"
+
+function usage {
+echo "Usage:"
+echo "./meet -u username -r receiver's_number -m \"message\""
+exit
+}
+
+while true
+do
+	case "$1" in
+		-u|--username)
+			user_name=$2
+			shift 2;;
+		-r|--receiver)
+			receiver=$2
+			shift 2;;
+		-m|--message)
+			message=$2
+			shift 2;;
+	   	-h|--help)
+			usage;;
+	        --)
+			shift
+			break;;
+		*)
+			echo "Invalid. Displaying the help section."
+		        usage
+			break;;
+	esac
+done	
+			
+			
+echo -n "Password for $user_name: "
+read -s password
+echo
+echo "Sending...."
+curl -c /tmp/cookies -s --request POST 'http://www.meet.net.np/meet/action/login' -d "username=$user_name" -d "password=$password" -d "loginPage=true" -d "loginbut=login" 
+curl -b /tmp/cookies -s --request POST 'http://www.meet.net.np/meet/mod/sms/actions/send.php' -d "recipient=$receiver" -d "message=$message" -d "sendbutton=Send Now"  > /tmp/smslog
+curl -b /tmp/cookies -s --request GET 'http://www.meet.net.np/meet/sms/sms' > /tmp/smsnumber
+
+sent=`cat /tmp/smsnumber | grep Quota | awk '{print $4}' | grep -o -P '(?<=:).*(?=/)'`
+
+
+
+grep -q -o SUCCESS /tmp/smslog && echo "SMS successfully sent. :)" || echo "SMS sending failed. :("
+echo "Number of sms sent today: $sent"
+echo "Number of sms left: $((10-$sent))"
+
+
+
+
+
+
+
