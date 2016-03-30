@@ -15,7 +15,9 @@ fi
 #help section
 function usage {
 	echo -e "Usage:
-	 ./meetsms -u username -r receiver's_number -m \"message\""
+	 ./meetsms -u username -r receiver's_number -m \"message\" \n
+	 OR
+	 ./meetsms -u username -r receiver's_number -f filename"
 
 }
 
@@ -25,7 +27,7 @@ function send {
 	curl -b /tmp/meetcookies -s --request GET 'http://www.meet.net.np/meet/sms/sms' > /tmp/meetnumber
 }
 
-while getopts ":u:r:m:h" OPT
+while getopts ":u:r:m:f:h" OPT
 do
 	case $OPT in
 	u)
@@ -33,7 +35,23 @@ do
 	r)
 		receiver=$OPTARG;;
 	m)
-		message=$OPTARG;;
+		message=$OPTARG;
+		charnumber=`echo $message | wc -c`;
+		if [ "$charnumber" -gt 304 ]
+		then
+			echo "Maximum number of allowed character is 304. Your message contains $charnumber characters. Please shorten it."
+			exit
+		fi
+		;;
+	f)
+		filename=$OPTARG;
+		charnumber=`cat $filename | wc -c`;
+		if [ "$charnumber" -gt 304 ]
+		then
+			echo "Maximun number of allowed characters is 304. Your message contains $charnumber characters. Please shorten it."
+			exit
+		fi
+		message=$(cat $filename);;
 	h)
 		usage;
 		exit;;
@@ -50,11 +68,10 @@ do
 	esac
 done
 shift $((OPTIND-1)) 
-
 #Check if all parameters are fulfilled
 if [ "$username" == "NULL" ] || [ "$receiver" == "NULL" ] || [ "$message" == "NULL" ]
 then
-	echo "All three of -u, -r & -m are required. Check syntax:"
+	echo "All three of -u, -r & -m or -f are required. Check syntax:"
 	usage
 	exit
 fi
