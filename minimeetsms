@@ -1,0 +1,23 @@
+#!/bin/bash
+
+
+
+#This is the minified version and the main working part of sending sms.
+#USAGE:
+#./minimeetsms username receiver's_number "message"
+#
+#Example:
+#./minimeetsms avasz 9841111111 "message"
+
+
+echo -n "Password for $1: "
+read -s password
+curl -c /tmp/meetcookies -s --request POST 'http://www.meet.net.np/meet/action/login' -d "username=$1" -d "password=$password" -d "loginPage=true" -d "loginbut=login" 
+curl -b /tmp/meetcookies -s --request POST 'http://www.meet.net.np/meet/mod/sms/actions/send.php' -d "recipient=$2" -d "message=$3" -d "sendbutton=Send Now"
+
+
+
+
+
+
+
