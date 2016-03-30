@@ -42,7 +42,7 @@ do
 		usage
 		exit;;
 	:) 
-		echo "MIssing option arguements for -$OPTARG" >&2;
+		echo "Missing option arguements for -$OPTARG" >&2;
 		exit;;
 	*) 
 		echo "Unimplemented option: -$OPTARG" >&2;
@@ -65,9 +65,11 @@ echo
 echo "Sending...."
 send
 
-grep -q -o SUCCESS /tmp/meetlog && { echo "SMS successfully sent. :)"; rm -rf /tmp/meet*; } || { echo -e "SMS sending failed. :( \nPossible reasons: \n\t1) Incorrect password, \n\t2) Free SMS Limit Reached, \n\t3) Network Problem, \n\t4) Incorrect Receiver's Mobile Number."; rm -rf /tmp/meet*; exit; }
+grep -q -o SUCCESS /tmp/meetlog && { echo "SMS successfully sent. :)"; } || { echo -e "SMS sending failed. :( \nPossible reasons: \n\t1) Incorrect password, \n\t2) Free SMS Limit Reached, \n\t3) Network Problem, \n\t4) Incorrect Receiver's Mobile Number."; rm -rf /tmp/meet*; exit; }
 sent=`cat /tmp/meetnumber | grep Quota | awk '{print $4}' | grep -o -P '(?<=:).*(?=/)'`
 echo -e "Number of sms sent today: $sent \nNumer of sms left: $((10-$sent))"
+#Delete cookies and stuffs
+rm -rf /tmp/meet*
 
 
 
