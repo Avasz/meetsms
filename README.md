@@ -24,5 +24,3 @@ It has three parameters, `-u` for **username**, `-r` for **receiver's number** a
 ```shell
 ./meetsms -u avasz -r 9841111111 -f /home/avasz/logfile
 ```
-##### Screenshot
-![screenshot](https://raw.githubusercontent.com/Avasz/meetsms/master/screenshot.png)
